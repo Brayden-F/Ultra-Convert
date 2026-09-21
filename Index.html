@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ultra Convert</title>
+    <link rel="icon" type="image/png" href="Assets/Ultra Convert Favicon.ico">
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+		:root {
+			--ink: #111111;
+			--muted: #666666;
+			--paper: #f2f2f2;
+			--panel: #ffffff;
+			--line: #d4d4d4;
+			--accent: #2563eb;
+			--accent-dark: #1d4ed8;
+			--teal: #2563eb;
+			--shadow: 0 18px 45px rgba(0, 0, 0, 0.1);
+		}
+
+		:root[data-theme="dark"] {
+			--ink: #f5f5f5;
+			--muted: #adadad;
+			--paper: #151515;
+			--panel: #202020;
+			--line: #444444;
+			--accent: #60a5fa;
+			--accent-dark: #93c5fd;
+			--teal: #60a5fa;
+			--shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			min-height: 100vh;
+			margin: 0;
+			color: var(--ink);
+			background: linear-gradient(135deg, #ffffff 0%, var(--paper) 100%);
+			font-family: 'Inter', Arial, sans-serif;
+			transition: color 0.2s ease, background 0.2s ease;
+		}
+
+		:root[data-theme="dark"] body { background: linear-gradient(135deg, #101010 0%, var(--paper) 100%); }
+
+		.page {
+			width: min(920px, calc(100% - 32px));
+			margin: 0 auto;
+			padding: 52px 0 64px;
+		}
+
+		.topbar {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 20px;
+			margin-bottom: 34px;
+		}
+
+		.theme-toggle {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			width: 68px;
+			height: 36px;
+			padding: 4px;
+			border: 1px solid var(--line);
+			border-radius: 999px;
+			color: var(--muted);
+			background: var(--paper);
+			cursor: pointer;
+			font-size: 0.9rem;
+			transition: border-color 0.3s ease, background 0.3s ease;
+		}
+
+		.theme-knob {
+			position: absolute;
+			z-index: 0;
+			left: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 26px;
+			height: 26px;
+			border-radius: 50%;
+			background: var(--panel);
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+			transform: translateX(0) rotate(0deg);
+			transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.3s ease;
+		}
+
+		.theme-knob span {
+			position: absolute;
+			line-height: 1;
+			transition: opacity 0.3s ease, transform 0.35s ease;
+		}
+
+		.theme-toggle .sun { opacity: 1; transform: rotate(0deg) scale(1); }
+		.theme-toggle .moon { opacity: 0; transform: rotate(-25deg) scale(0.8); }
+		.theme-toggle:hover { border-color: var(--ink); }
+		.theme-toggle:focus-visible { outline: 3px solid rgba(0, 0, 0, 0.2); outline-offset: 3px; }
+		:root[data-theme="dark"] .theme-knob { transform: translateX(32px) rotate(180deg); }
+		:root[data-theme="dark"] .theme-toggle .sun { opacity: 0; transform: rotate(25deg) scale(0.8); }
+		:root[data-theme="dark"] .theme-toggle .moon { opacity: 1; transform: rotate(0deg) scale(1); }
+
+		.eyebrow {
+			margin: 0 0 10px;
+			color: var(--accent-dark);
+			font: 800 0.78rem/1.2 'Inter', Arial, sans-serif;
+			letter-spacing: 0.15em;
+			text-transform: uppercase;
+		}
+
+		.title-row {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			gap: 14px;
+			flex-wrap: nowrap;
+			margin-left: 12px;
+		}
+
+		h1 {
+			max-width: 600px;
+			margin: 0;
+			color: var(--ink);
+			font-weight: 800;
+			font-size: clamp(2.6rem, 7vw, 5.4rem);
+			line-height: 0.94;
+		}
+
+		h1 .title-accent { color: var(--accent); }
+
+		.title-logo {
+			width: clamp(90px, 12vw, 130px);
+			height: auto;
+			flex-shrink: 0;
+			display: block;
+			filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.12));
+		}
+
+		.intro {
+			max-width: 560px;
+			margin: 18px 0 34px;
+			color: var(--muted);
+			font: 1.08rem/1.55 'Inter', Arial, sans-serif;
+		}
+
+		.converter {
+			overflow: hidden;
+			border: 1px solid var(--line);
+			border-radius: 8px;
+			background: var(--panel);
+			box-shadow: var(--shadow);
+		}
+
+		.categories {
+			display: flex;
+			gap: 8px;
+			padding: 14px;
+			overflow-x: auto;
+			border-bottom: 1px solid var(--line);
+			background: #f4f7ff;
+		}
+
+		:root[data-theme="dark"] .categories { background: #1c2738; }
+
+		.category {
+			flex: 0 0 auto;
+			padding: 10px 15px;
+			border: 1px solid transparent;
+			border-radius: 999px;
+			color: var(--muted);
+			background: transparent;
+			cursor: pointer;
+			font: 700 0.88rem Arial, sans-serif;
+		}
+
+		.category:hover, .category.active {
+			border-color: var(--accent);
+			color: var(--accent-dark);
+			background: #e5edff;
+		}
+
+		:root[data-theme="dark"] .category:hover,
+		:root[data-theme="dark"] .category.active { background: #263b5c; }
+
+		.workspace { padding: clamp(22px, 5vw, 42px); }
+
+		.conversion-grid {
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			align-items: end;
+			gap: 16px;
+		}
+
+		.field label {
+			display: block;
+			margin-bottom: 9px;
+			color: var(--muted);
+			font: 700 0.75rem Arial, sans-serif;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		input, select {
+			width: 100%;
+			min-height: 52px;
+			border: 1px solid var(--line);
+			border-radius: 5px;
+			color: var(--ink);
+			background: var(--panel);
+			font: 1.1rem 'Inter', Arial, sans-serif;
+		}
+
+		input { padding: 0 14px; }
+		select { padding: 0 10px; }
+		input:focus, select:focus { outline: 3px solid rgba(37, 99, 235, 0.2); border-color: var(--teal); }
+
+		.unit-select { margin-top: 10px; }
+
+		.swap {
+			width: 46px;
+			height: 46px;
+			border: 1px solid var(--line);
+			border-radius: 50%;
+			color: var(--teal);
+			background: #eeeeee;
+			cursor: pointer;
+			font-size: 1.4rem;
+		}
+
+		.swap:hover { color: white; background: #111111; }
+
+		:root[data-theme="dark"] .swap { background: #353535; }
+		:root[data-theme="dark"] .swap:hover { color: #111111; background: #ffffff; }
+
+		.result {
+			min-height: 62px;
+			margin-top: 30px;
+			padding: 16px 18px;
+			border-left: 4px solid var(--accent);
+			background: #eef4ff;
+			font: 700 1.18rem 'Inter', Arial, sans-serif;
+		}
+
+		:root[data-theme="dark"] .result { background: #1d2d49; }
+
+		.result small {
+			display: block;
+			margin-top: 6px;
+			color: var(--muted);
+			font-size: 0.8rem;
+			font-weight: 400;
+		}
+
+		.actions {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			margin-top: 22px;
+		}
+
+		button { font-family: 'Inter', Arial, sans-serif; }
+
+		.action {
+			padding: 10px 16px;
+			border: 1px solid var(--line);
+			border-radius: 4px;
+			color: var(--muted);
+			background: transparent;
+			cursor: pointer;
+			font-weight: 700;
+		}
+
+		.action:hover { border-color: var(--teal); color: var(--teal); }
+		.tip { margin: 0; color: var(--muted); font: 0.82rem Arial, sans-serif; }
+
+		.file-workspace { display: none; }
+		.file-workspace.active { display: block; }
+
+		.file-grid {
+			display: grid;
+			grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+			gap: 28px;
+			align-items: start;
+		}
+
+		.file-drop {
+			display: grid;
+			min-height: 250px;
+			place-items: center;
+			padding: 24px;
+			border: 2px dashed var(--line);
+			border-radius: 8px;
+			color: var(--muted);
+			background: var(--paper);
+			text-align: center;
+			cursor: pointer;
+			transition: border-color 0.2s ease, background 0.2s ease;
+		}
+
+		.file-drop:hover, .file-drop:focus-within { border-color: var(--accent); background: #eef4ff; }
+		:root[data-theme="dark"] .file-drop:hover,
+		:root[data-theme="dark"] .file-drop:focus-within { background: #1d2d49; }
+		.file-drop input { display: none; }
+		.file-drop strong { display: block; margin-bottom: 8px; color: var(--ink); font-size: 1.05rem; }
+		.file-drop span { display: block; font-size: 0.85rem; }
+
+		.file-preview {
+			display: none;
+			width: 100%;
+			max-height: 220px;
+			object-fit: contain;
+			border-radius: 4px;
+		}
+
+		.file-preview.visible { display: block; }
+		.file-settings { display: grid; gap: 18px; }
+		.file-name { margin: 0; overflow: hidden; color: var(--muted); font-size: 0.85rem; text-overflow: ellipsis; white-space: nowrap; }
+		.file-settings select { margin-top: 8px; }
+		.file-button { width: 100%; padding: 13px 16px; border: 0; border-radius: 4px; color: #ffffff; background: var(--accent); cursor: pointer; font-weight: 700; }
+		.file-button:hover { background: var(--accent-dark); }
+		.file-button:disabled { opacity: 0.45; cursor: not-allowed; }
+		.file-status { min-height: 20px; margin: 0; color: var(--muted); font-size: 0.82rem; }
+
+		@media (max-width: 620px) {
+			.file-grid { grid-template-columns: 1fr; }
+		}
+
+		@media (max-width: 620px) {
+			.page { width: min(100% - 20px, 920px); padding-top: 30px; }
+			.conversion-grid { grid-template-columns: 1fr; gap: 13px; }
+			.swap { justify-self: center; transform: rotate(90deg); }
+			.actions { align-items: flex-start; flex-direction: column-reverse; }
+		}
+	</style>
+</head>
+<body>
+	<main class="page">
+		<div class="topbar">
+			<p class="eyebrow">Everyday utility</p>
+			<button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch theme">
+				<span class="theme-knob">
+					<span class="sun" aria-hidden="true">&#9728;</span>
+					<span class="moon" aria-hidden="true">&#9790;</span>
+				</span>
+			</button>
+		</div>
+		<div class="title-row">
+			<img class="title-logo" src="Assets/Ultra Convert Logo.png" alt="Ultra Convert logo">
+			<h1>Ultra<br><span class="title-accent">Convert</span></h1>
+		</div>
+		<p class="intro">Convert measurements and image files quickly in your browser.</p>
+
+		<section class="converter" aria-label="Unit converter">
+			<nav class="categories" aria-label="Conversion categories" id="categories"></nav>
+			<div class="workspace" id="unitWorkspace">
+				<div class="conversion-grid">
+					<div class="field">
+						<label for="fromValue">From</label>
+						<input id="fromValue" type="number" value="1" step="any" inputmode="decimal">
+						<select id="fromUnit" class="unit-select" aria-label="From unit"></select>
+					</div>
+					<button class="swap" id="swapButton" type="button" title="Swap units" aria-label="Swap units">&#8646;</button>
+					<div class="field">
+						<label for="toValue">To</label>
+						<input id="toValue" type="number" step="any" inputmode="decimal" readonly>
+						<select id="toUnit" class="unit-select" aria-label="To unit"></select>
+					</div>
+				</div>
+				<div class="result" id="result" aria-live="polite"></div>
+				<div class="actions">
+					<p class="tip">Conversions happen instantly in your browser.</p>
+					<button class="action" id="resetButton" type="button">Reset</button>
+				</div>
+			</div>
+			<div class="workspace file-workspace" id="fileWorkspace">
+				<div class="file-grid">
+					<label class="file-drop" for="imageFile">
+						<div id="filePrompt"><strong>Choose an image</strong><span>PNG, JPG, JPEG, WEBP, AFIV, TIFF, ICO, BMP, or SVG</span></div>
+						<img class="file-preview" id="filePreview" alt="Selected image preview">
+						<input id="imageFile" type="file" accept=".png,.jpg,.jpeg,.webp,.avif,.afiv,.tif,.tiff,.ico,.bmp,.svg,image/png,image/jpeg,image/webp,image/avif,image/tiff,image/x-icon,image/bmp,image/svg+xml">
+					</label>
+					<div class="file-settings">
+						<p class="file-name" id="fileName">No image selected</p>
+						<label class="field" for="imageFormat">Convert to
+							<select id="imageFormat">
+								<option value="png">PNG</option>
+								<option value="jpg">JPG</option>
+								<option value="jpeg">JPEG</option>
+								<option value="webp">WEBP</option>
+								<option value="avif">AFIV (AVIF)</option>
+								<option value="tiff">TIFF</option>
+								<option value="ico">ICO</option>
+								<option value="bmp">BMP</option>
+								<option value="svg">SVG</option>
+							</select>
+						</label>
+						<button class="file-button" id="convertImageButton" type="button" disabled>Convert image</button>
+						<p class="file-status" id="fileStatus" aria-live="polite"></p>
+					</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		const themeToggle = document.getElementById('themeToggle');
+		const savedTheme = localStorage.getItem('unit-converter-theme') || 'light';
+
+		function setTheme(theme) {
+			document.documentElement.dataset.theme = theme;
+			const darkMode = theme === 'dark';
+			themeToggle.setAttribute('aria-label', darkMode ? 'Switch to light mode' : 'Switch to dark mode');
+			themeToggle.setAttribute('aria-pressed', darkMode);
+		}
+
+		setTheme(savedTheme);
+		themeToggle.addEventListener('click', () => {
+			const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+			localStorage.setItem('unit-converter-theme', nextTheme);
+			setTheme(nextTheme);
+		});
+
+		const categories = {
+			Length: {
+				units: { Meter: 1, Kilometer: 1000, Centimeter: 0.01, Millimeter: 0.001, Mile: 1609.344, Yard: 0.9144, Foot: 0.3048, Inch: 0.0254 },
+				defaults: ['Meter', 'Foot']
+			},
+			Weight: {
+				units: { Kilogram: 1, Gram: 0.001, Milligram: 0.000001, Pound: 0.45359237, Ounce: 0.0283495231, Stone: 6.35029318 },
+				defaults: ['Kilogram', 'Pound']
+			},
+			Temperature: {
+				units: { Celsius: 'c', Fahrenheit: 'f', Kelvin: 'k' },
+				defaults: ['Celsius', 'Fahrenheit']
+			},
+			Volume: {
+				units: { Liter: 1, Milliliter: 0.001, Gallon: 3.785411784, Quart: 0.946352946, Pint: 0.473176473, Cup: 0.2365882365 },
+				defaults: ['Liter', 'Gallon']
+			},
+			Area: {
+				units: { 'Square meter': 1, 'Square kilometer': 1000000, 'Square foot': 0.09290304, 'Square yard': 0.83612736, Acre: 4046.8564224, Hectare: 10000 },
+				defaults: ['Square meter', 'Square foot']
+			},
+			Speed: {
+				units: { 'Kilometers per hour': 1, 'Miles per hour': 1.609344, 'Meters per second': 3.6, Knot: 1.852 },
+				defaults: ['Kilometers per hour', 'Miles per hour']
+			},
+			Data: {
+				units: { Byte: 1, Kilobyte: 1024, Megabyte: 1048576, Gigabyte: 1073741824, Terabyte: 1099511627776 },
+				defaults: ['Megabyte', 'Gigabyte']
+			}
+		};
+
+		const categoryList = document.getElementById('categories');
+		const fromValue = document.getElementById('fromValue');
+		const toValue = document.getElementById('toValue');
+		const fromUnit = document.getElementById('fromUnit');
+		const toUnit = document.getElementById('toUnit');
+		const result = document.getElementById('result');
+		let currentCategory = 'Length';
+
+		Object.keys(categories).forEach((category) => {
+			const button = document.createElement('button');
+			button.className = 'category';
+			button.type = 'button';
+			button.textContent = category;
+			button.addEventListener('click', () => selectCategory(category));
+			categoryList.appendChild(button);
+		});
+
+		const fileTab = document.createElement('button');
+		fileTab.className = 'category';
+		fileTab.type = 'button';
+		fileTab.textContent = 'File';
+		fileTab.addEventListener('click', selectFileTab);
+		categoryList.appendChild(fileTab);
+
+		const unitWorkspace = document.getElementById('unitWorkspace');
+		const fileWorkspace = document.getElementById('fileWorkspace');
+
+		function selectFileTab() {
+			currentCategory = 'File';
+			unitWorkspace.style.display = 'none';
+			fileWorkspace.classList.add('active');
+			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'File'));
+		}
+
+		function selectCategory(category) {
+			currentCategory = category;
+			const config = categories[category];
+			unitWorkspace.style.display = '';
+			fileWorkspace.classList.remove('active');
+			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === category));
+			[fromUnit, toUnit].forEach((select) => {
+				select.innerHTML = '';
+				Object.keys(config.units).forEach((unit) => select.add(new Option(unit, unit)));
+			});
+			fromUnit.value = config.defaults[0];
+			toUnit.value = config.defaults[1];
+			fromValue.value = '1';
+			convert();
+		}
+
+		function convertTemperature(value, unit) {
+			if (unit === 'Celsius') return value + 273.15;
+			if (unit === 'Fahrenheit') return (value - 32) * 5 / 9 + 273.15;
+			return value;
+		}
+
+		function fromKelvin(value, unit) {
+			if (unit === 'Celsius') return value - 273.15;
+			if (unit === 'Fahrenheit') return (value - 273.15) * 9 / 5 + 32;
+			return value;
+		}
+
+		function convert() {
+			const rawValue = Number(fromValue.value);
+			if (!Number.isFinite(rawValue)) {
+				toValue.value = '';
+				result.textContent = 'Enter a number to convert.';
+				return;
+			}
+			const config = categories[currentCategory];
+			const converted = currentCategory === 'Temperature'
+				? fromKelvin(convertTemperature(rawValue, fromUnit.value), toUnit.value)
+				: rawValue * config.units[fromUnit.value] / config.units[toUnit.value];
+			const rounded = Number(converted.toPrecision(12));
+			toValue.value = rounded;
+			result.innerHTML = `${formatNumber(rawValue)} ${fromUnit.value} = ${formatNumber(rounded)} ${toUnit.value}<small>${currentCategory} conversion</small>`;
+		}
+
+		function formatNumber(value) {
+			return new Intl.NumberFormat(undefined, { maximumSignificantDigits: 12 }).format(value);
+		}
+
+		document.getElementById('swapButton').addEventListener('click', () => {
+			const oldUnit = fromUnit.value;
+			fromUnit.value = toUnit.value;
+			toUnit.value = oldUnit;
+			fromValue.value = toValue.value || '0';
+			convert();
+		});
+		document.getElementById('resetButton').addEventListener('click', () => selectCategory(currentCategory));
+		fromValue.addEventListener('input', convert);
+		fromUnit.addEventListener('change', convert);
+		toUnit.addEventListener('change', convert);
+		selectCategory(currentCategory);
+
+		const imageFile = document.getElementById('imageFile');
+		const imageFormat = document.getElementById('imageFormat');
+		const filePreview = document.getElementById('filePreview');
+		const filePrompt = document.getElementById('filePrompt');
+		const fileName = document.getElementById('fileName');
+		const fileStatus = document.getElementById('fileStatus');
+		const convertImageButton = document.getElementById('convertImageButton');
+		let selectedImage = null;
+
+		imageFile.addEventListener('change', () => {
+			selectedImage = imageFile.files[0] || null;
+			if (!selectedImage) return;
+			fileName.textContent = selectedImage.name;
+			fileStatus.textContent = '';
+			convertImageButton.disabled = false;
+			const objectUrl = URL.createObjectURL(selectedImage);
+			filePreview.onload = () => {
+				URL.revokeObjectURL(objectUrl);
+				filePreview.classList.add('visible');
+				filePrompt.style.display = 'none';
+			};
+			filePreview.onerror = () => {
+				URL.revokeObjectURL(objectUrl);
+				fileStatus.textContent = 'This browser cannot preview that input format, but conversion may still work.';
+			};
+			filePreview.src = objectUrl;
+		});
+
+		convertImageButton.addEventListener('click', async () => {
+			if (!selectedImage) return;
+			fileStatus.textContent = 'Converting...';
+			try {
+				const image = await loadImage(selectedImage);
+				const canvas = document.createElement('canvas');
+				canvas.width = image.naturalWidth;
+				canvas.height = image.naturalHeight;
+				const context = canvas.getContext('2d');
+				context.drawImage(image, 0, 0);
+				const format = imageFormat.value;
+				const output = format === 'bmp' ? encodeBmp(canvas) : format === 'ico' ? await encodeIco(canvas) : format === 'tiff' ? encodeTiff(canvas) : format === 'svg' ? encodeSvg(canvas) : await encodeCanvas(canvas, format);
+				downloadBlob(output.blob, `${selectedImage.name.replace(/\.[^.]+$/, '')}.${format}`);
+				fileStatus.textContent = `Downloaded ${format.toUpperCase()} file.`;
+			} catch (error) {
+				fileStatus.textContent = error.message;
+			}
+		});
+
+		function loadImage(file) {
+			return new Promise((resolve, reject) => {
+				const image = new Image();
+				const objectUrl = URL.createObjectURL(file);
+				image.onload = () => { URL.revokeObjectURL(objectUrl); resolve(image); };
+				image.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('This image format cannot be decoded by your browser.')); };
+				image.src = objectUrl;
+			});
+		}
+
+		function encodeCanvas(canvas, format) {
+			const mime = format === 'jpg' || format === 'jpeg' ? 'image/jpeg' : `image/${format}`;
+			return new Promise((resolve, reject) => canvas.toBlob((blob) => {
+				if (!blob || (format === 'avif' && blob.type !== 'image/avif')) {
+					reject(new Error(`${format.toUpperCase()} encoding is not supported by this browser.`));
+					return;
+				}
+				resolve({ blob });
+			}, mime, 0.92));
+		}
+
+		function imagePixels(canvas) {
+			return { width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data };
+		}
+
+		function write16(view, offset, value) { view.setUint16(offset, value, true); }
+		function write32(view, offset, value) { view.setUint32(offset, value, true); }
+
+		function encodeBmp(canvas) {
+			const { width, height, data } = imagePixels(canvas);
+			const rowSize = Math.ceil(width * 3 / 4) * 4;
+			const buffer = new ArrayBuffer(54 + rowSize * height);
+			const view = new DataView(buffer);
+			write16(view, 0, 0x4d42); write32(view, 2, buffer.byteLength); write32(view, 10, 54);
+			write32(view, 14, 40); write32(view, 18, width); write32(view, 22, height); write16(view, 26, 1); write16(view, 28, 24); write32(view, 34, rowSize * height);
+			const bytes = new Uint8Array(buffer);
+			for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) {
+				const source = ((height - y - 1) * width + x) * 4;
+				const target = 54 + y * rowSize + x * 3;
+				bytes[target] = data[source + 2]; bytes[target + 1] = data[source + 1]; bytes[target + 2] = data[source];
+			}
+			return { blob: new Blob([buffer], { type: 'image/bmp' }) };
+		}
+
+		async function encodeIco(canvas) {
+			const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+			if (!pngBlob) throw new Error('ICO encoding is not supported by this browser.');
+			const pngBytes = new Uint8Array(await pngBlob.arrayBuffer());
+			const width = Math.min(canvas.width, 256);
+			const height = Math.min(canvas.height, 256);
+			const buffer = new ArrayBuffer(22 + pngBytes.length);
+			const view = new DataView(buffer);
+			const bytes = new Uint8Array(buffer);
+			write16(view, 2, 1); write16(view, 4, 1);
+			view.setUint8(6, width === 256 ? 0 : width); view.setUint8(7, height === 256 ? 0 : height);
+			write16(view, 10, 1); write16(view, 12, 32); write32(view, 14, pngBytes.length); write32(view, 18, 22);
+			bytes.set(pngBytes, 22);
+			return { blob: new Blob([buffer], { type: 'image/x-icon' }) };
+		}
+
+		function encodeTiff(canvas) {
+			const { width, height, data } = imagePixels(canvas);
+			const pixelOffset = 8 + 2 + 11 * 12 + 4 + 6;
+			const buffer = new ArrayBuffer(pixelOffset + width * height * 3);
+			const view = new DataView(buffer); const bytes = new Uint8Array(buffer);
+			bytes.set([0x49, 0x49, 42, 0], 0); write32(view, 4, 8); write16(view, 8, 11);
+			const tags = [[256, 3, 1, width], [257, 3, 1, height], [258, 3, 3, pixelOffset - 6], [259, 3, 1, 1], [262, 3, 1, 2], [273, 4, 1, pixelOffset], [277, 3, 1, 3], [278, 4, 1, height], [279, 4, 1, width * height * 3], [284, 3, 1, 1], [274, 3, 1, 1]];
+			tags.forEach((tag, index) => { const offset = 10 + index * 12; write16(view, offset, tag[0]); write16(view, offset + 2, tag[1]); write32(view, offset + 4, tag[2]); if (tag[2] === 1 && tag[1] === 3) write16(view, offset + 8, tag[3]); else write32(view, offset + 8, tag[3]); });
+			write32(view, 10 + 11 * 12, 0); write16(view, pixelOffset - 6, 8); write16(view, pixelOffset - 4, 8); write16(view, pixelOffset - 2, 8);
+			for (let index = 0, target = pixelOffset; index < data.length; index += 4) { bytes[target++] = data[index]; bytes[target++] = data[index + 1]; bytes[target++] = data[index + 2]; }
+			return { blob: new Blob([buffer], { type: 'image/tiff' }) };
+		}
+
+		function encodeSvg(canvas) {
+			const imageData = canvas.toDataURL('image/png');
+			const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}"><image width="${canvas.width}" height="${canvas.height}" href="${imageData}"/></svg>`;
+			return { blob: new Blob([svg], { type: 'image/svg+xml' }) };
+		}
+
+		function downloadBlob(blob, filename) {
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(blob); link.download = filename; link.click();
+			URL.revokeObjectURL(link.href);
+		}
+	</script>
+</body>
+</html>
