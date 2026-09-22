@@ -279,8 +279,17 @@
 		.action:hover { border-color: var(--teal); color: var(--teal); }
 		.tip { margin: 0; color: var(--muted); font: 0.82rem Arial, sans-serif; }
 
+		.currency-workspace { display: none; }
+		.currency-workspace.active { display: block; }
 		.file-workspace { display: none; }
 		.file-workspace.active { display: block; }
+
+		.currency-grid {
+			display: grid;
+			grid-template-columns: 1fr auto 1fr;
+			gap: 16px;
+			align-items: end;
+		}
 
 		.file-grid {
 			display: grid;
@@ -378,6 +387,22 @@
 					<button class="action" id="resetButton" type="button">Reset</button>
 				</div>
 			</div>
+			<div class="workspace currency-workspace" id="currencyWorkspace">
+				<div class="currency-grid">
+					<div class="field">
+						<label for="currencyFromValue">From</label>
+						<input id="currencyFromValue" type="number" value="1" step="any" inputmode="decimal">
+						<select id="currencyFromUnit" class="unit-select" aria-label="From currency"></select>
+					</div>
+					<button class="swap" id="currencySwapButton" type="button" title="Swap currencies" aria-label="Swap currencies">&#8646;</button>
+					<div class="field">
+						<label for="currencyToValue">To</label>
+						<input id="currencyToValue" type="number" step="any" inputmode="decimal" readonly>
+						<select id="currencyToUnit" class="unit-select" aria-label="To currency"></select>
+					</div>
+				</div>
+				<div class="result" id="currencyResult" aria-live="polite"></div>
+			</div>
 			<div class="workspace file-workspace" id="fileWorkspace">
 				<div class="file-grid">
 					<label class="file-drop" for="imageFile">
@@ -474,6 +499,13 @@
 			categoryList.appendChild(button);
 		});
 
+		const currencyTab = document.createElement('button');
+		currencyTab.className = 'category';
+		currencyTab.type = 'button';
+		currencyTab.textContent = 'Currency';
+		currencyTab.addEventListener('click', selectCurrencyTab);
+		categoryList.appendChild(currencyTab);
+
 		const fileTab = document.createElement('button');
 		fileTab.className = 'category';
 		fileTab.type = 'button';
@@ -482,11 +514,22 @@
 		categoryList.appendChild(fileTab);
 
 		const unitWorkspace = document.getElementById('unitWorkspace');
+		const currencyWorkspace = document.getElementById('currencyWorkspace');
 		const fileWorkspace = document.getElementById('fileWorkspace');
+
+		function selectCurrencyTab() {
+			currentCategory = 'Currency';
+			unitWorkspace.style.display = 'none';
+			currencyWorkspace.classList.add('active');
+			fileWorkspace.classList.remove('active');
+			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'Currency'));
+			convertCurrency();
+		}
 
 		function selectFileTab() {
 			currentCategory = 'File';
 			unitWorkspace.style.display = 'none';
+			currencyWorkspace.classList.remove('active');
 			fileWorkspace.classList.add('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'File'));
 		}
@@ -495,6 +538,7 @@
 			currentCategory = category;
 			const config = categories[category];
 			unitWorkspace.style.display = '';
+			currencyWorkspace.classList.remove('active');
 			fileWorkspace.classList.remove('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === category));
 			[fromUnit, toUnit].forEach((select) => {
@@ -551,6 +595,198 @@
 		fromUnit.addEventListener('change', convert);
 		toUnit.addEventListener('change', convert);
 		selectCategory(currentCategory);
+
+		const currencyRates = {
+			USD: 1,
+			EUR: 0.92,
+			GBP: 0.79,
+			JPY: 157.54,
+			CAD: 1.36,
+			AUD: 1.5,
+			CHF: 0.88,
+			CNY: 7.24,
+			INR: 83.3,
+			SEK: 10.42,
+			NOK: 10.61,
+			DKK: 6.86,
+			PLN: 3.93,
+			CZK: 22.67,
+			HUF: 360.13,
+			RUB: 92.89,
+			UAH: 41.67,
+			TRY: 32.73,
+			BRL: 5.59,
+			MXN: 18.1,
+			ARS: 1201.0,
+			CLP: 932.0,
+			COP: 4060.0,
+			PEN: 3.72,
+			BOB: 6.91,
+			UYU: 39.26,
+			PYG: 7600.0,
+			DOP: 58.9,
+			GTQ: 7.76,
+			HNL: 24.7,
+			NIO: 36.7,
+			CRC: 516.0,
+			GHS: 15.3,
+			NGN: 1600.0,
+			KES: 129.0,
+			TZS: 2527.0,
+			MAD: 9.9,
+			TND: 3.15,
+			EGP: 48.5,
+			SAR: 3.75,
+			AED: 3.67,
+			QAR: 3.64,
+			OMR: 0.38,
+			KWD: 0.31,
+			BHD: 0.38,
+			ILS: 3.66,
+			NZD: 1.62,
+			SGD: 1.35,
+			HKD: 7.82,
+			KRW: 1367.0,
+			PHP: 58.0,
+			IDR: 16100.0,
+			THB: 35.6,
+			MYR: 4.7,
+			VND: 24900.0,
+			PKR: 278.0,
+			BDT: 117.0,
+			LKR: 299.0,
+			NPR: 133.0,
+			ZAR: 18.3,
+			BWP: 13.7,
+			RON: 4.69,
+			BGN: 1.8,
+			ALL: 95.0,
+			ISK: 136.0,
+			GEL: 2.73,
+			AMD: 390.0,
+			MNT: 3440.0,
+			KZT: 494.0,
+			UZS: 12500.0,
+			BYN: 3.28
+		};
+
+		const currencySymbols = {
+			USD: '$',
+			EUR: '€',
+			GBP: '£',
+			JPY: '¥',
+			CAD: 'C$',
+			AUD: 'A$',
+			CHF: 'CHF',
+			CNY: '¥',
+			INR: '₹',
+			SEK: 'kr',
+			NOK: 'kr',
+			DKK: 'kr',
+			PLN: 'zł',
+			CZK: 'Kč',
+			HUF: 'Ft',
+			RUB: '₽',
+			UAH: '₴',
+			TRY: '₺',
+			BRL: 'R$',
+			MXN: '$',
+			ARS: '$',
+			CLP: '$',
+			COP: '$',
+			PEN: 'S/',
+			BOB: 'Bs',
+			UYU: '$',
+			PYG: '₲',
+			DOP: 'RD$',
+			GTQ: 'Q',
+			HNL: 'L',
+			NIO: 'C$',
+			CRC: '₡',
+			GHS: '₵',
+			NGN: '₦',
+			KES: 'KSh',
+			TZS: 'TSh',
+			MAD: 'DH',
+			TND: 'DT',
+			EGP: 'E£',
+			SAR: '﷼',
+			AED: 'د.إ',
+			QAR: '﷼',
+			OMR: '﷼',
+			KWD: 'د.ك',
+			BHD: '.د.ب',
+			ILS: '₪',
+			NZD: 'NZ$',
+			SGD: 'S$',
+			HKD: 'HK$',
+			KRW: '₩',
+			PHP: '₱',
+			IDR: 'Rp',
+			THB: '฿',
+			MYR: 'RM',
+			VND: '₫',
+			PKR: '₨',
+			BDT: '৳',
+			LKR: 'Rs',
+			NPR: '₨',
+			ZAR: 'R',
+			BWP: 'P',
+			RON: 'lei',
+			BGN: 'лв',
+			ALL: 'L',
+			ISK: 'kr',
+			GEL: '₾',
+			AMD: '֏',
+			MNT: '₮',
+			KZT: '₸',
+			UZS: 'so\'m',
+			BYN: 'Br'
+		};
+
+		const currencyFrom = document.getElementById('currencyFromUnit');
+		const currencyTo = document.getElementById('currencyToUnit');
+		const currencyFromValue = document.getElementById('currencyFromValue');
+		const currencyToValue = document.getElementById('currencyToValue');
+		const currencyResult = document.getElementById('currencyResult');
+		const currencySwapButton = document.getElementById('currencySwapButton');
+		const currencyEntries = Object.keys(currencyRates);
+
+		function fillCurrencySelects() {
+			[currencyFrom, currencyTo].forEach((select) => {
+				select.innerHTML = '';
+				currencyEntries.forEach((code) => select.add(new Option(`${code} ${currencySymbols[code] || ''} - ${code}`, code)));
+			});
+			currencyFrom.value = 'USD';
+			currencyTo.value = 'EUR';
+			currencyFromValue.value = '1';
+			convertCurrency();
+		}
+
+		function convertCurrency() {
+			const fromAmount = Number(currencyFromValue.value);
+			if (!Number.isFinite(fromAmount)) {
+				currencyToValue.value = '';
+				currencyResult.innerHTML = 'Enter a valid amount.<small>Currency conversion</small>';
+				return;
+			}
+			const fromRate = currencyRates[currencyFrom.value] || 1;
+			const toRate = currencyRates[currencyTo.value] || 1;
+			const converted = (fromAmount / fromRate) * toRate;
+			currencyToValue.value = Number(converted.toPrecision(12));
+			currencyResult.innerHTML = `${formatNumber(fromAmount)} ${currencyFrom.value} = ${formatNumber(Number(converted.toPrecision(12)))} ${currencyTo.value}<small>Currency conversion</small>`;
+		}
+
+		currencyFrom.addEventListener('change', convertCurrency);
+		currencyTo.addEventListener('change', convertCurrency);
+		currencyFromValue.addEventListener('input', convertCurrency);
+		currencySwapButton.addEventListener('click', () => {
+			const oldFrom = currencyFrom.value;
+			currencyFrom.value = currencyTo.value;
+			currencyTo.value = oldFrom;
+			convertCurrency();
+		});
+		fillCurrencySelects();
 
 		const imageFile = document.getElementById('imageFile');
 		const imageFormat = document.getElementById('imageFormat');
