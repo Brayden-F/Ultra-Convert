@@ -349,6 +349,41 @@
 		.file-button:disabled { opacity: 0.45; cursor: not-allowed; }
 		.file-status { min-height: 20px; margin: 0; color: var(--muted); font-size: 0.82rem; }
 
+		.translation-grid {
+			display: grid;
+			gap: 18px;
+		}
+
+		.translation-languages {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 16px;
+		}
+
+		.translation-input,
+		.translation-output {
+			width: 100%;
+			min-height: 150px;
+			padding: 14px;
+			resize: vertical;
+			border: 1px solid var(--line);
+			border-radius: 5px;
+			color: var(--ink);
+			background: var(--panel);
+			font: 1rem/1.5 'Inter', Arial, sans-serif;
+		}
+
+		.translation-output {
+			margin: 0;
+			white-space: pre-wrap;
+		}
+
+		.translation-input:focus { outline: 3px solid rgba(37, 99, 235, 0.2); border-color: var(--teal); }
+
+		@media (max-width: 620px) {
+			.translation-languages { grid-template-columns: 1fr; }
+		}
+
 		@media (max-width: 620px) {
 			.file-grid { grid-template-columns: 1fr; }
 		}
@@ -415,6 +450,51 @@
 					</div>
 				</div>
 				<div class="result" id="currencyResult" aria-live="polite"></div>
+			</div>
+			<div class="workspace translation-workspace" id="translationWorkspace" hidden>
+				<div class="translation-grid">
+					<div class="translation-languages">
+						<label class="field" for="translationFrom">From
+							<select id="translationFrom" aria-label="Translate from language">
+								<option value="auto">Auto-detect</option>
+								<option value="en">English</option>
+								<option value="es">Spanish</option>
+								<option value="fr">French</option>
+								<option value="de">German</option>
+								<option value="it">Italian</option>
+								<option value="pt">Portuguese</option>
+								<option value="ja">Japanese</option>
+								<option value="ko">Korean</option>
+								<option value="zh">Chinese</option>
+								<option value="ar">Arabic</option>
+								<option value="hi">Hindi</option>
+							</select>
+						</label>
+						<label class="field" for="translationTo">To
+							<select id="translationTo" aria-label="Translate to language">
+								<option value="en">English</option>
+								<option value="es">Spanish</option>
+								<option value="fr">French</option>
+								<option value="de">German</option>
+								<option value="it">Italian</option>
+								<option value="pt">Portuguese</option>
+								<option value="ja">Japanese</option>
+								<option value="ko">Korean</option>
+								<option value="zh">Chinese</option>
+								<option value="ar">Arabic</option>
+								<option value="hi">Hindi</option>
+							</select>
+						</label>
+					</div>
+					<label class="field" for="translationInput">Text to translate
+						<textarea class="translation-input" id="translationInput" placeholder="Type or paste text here..."></textarea>
+					</label>
+					<button class="file-button" id="translateButton" type="button">Translate</button>
+					<label class="field" for="translationOutput">Translation
+						<output class="translation-output" id="translationOutput" aria-live="polite">Your translation will appear here.</output>
+					</label>
+					<p class="file-status" id="translationStatus" aria-live="polite"></p>
+				</div>
 			</div>
 			<div class="workspace file-workspace" id="fileWorkspace">
 				<div class="file-grid">
@@ -520,6 +600,13 @@
 		currencyTab.addEventListener('click', selectCurrencyTab);
 		categoryList.appendChild(currencyTab);
 
+		const translationTab = document.createElement('button');
+		translationTab.className = 'category';
+		translationTab.type = 'button';
+		translationTab.textContent = 'Translation';
+		translationTab.addEventListener('click', selectTranslationTab);
+		categoryList.appendChild(translationTab);
+
 		const fileTab = document.createElement('button');
 		fileTab.className = 'category';
 		fileTab.type = 'button';
@@ -529,21 +616,33 @@
 
 		const unitWorkspace = document.getElementById('unitWorkspace');
 		const currencyWorkspace = document.getElementById('currencyWorkspace');
+		const translationWorkspace = document.getElementById('translationWorkspace');
 		const fileWorkspace = document.getElementById('fileWorkspace');
 
 		function selectCurrencyTab() {
 			currentCategory = 'Currency';
 			unitWorkspace.style.display = 'none';
 			currencyWorkspace.classList.add('active');
+			translationWorkspace.hidden = true;
 			fileWorkspace.classList.remove('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'Currency'));
 			convertCurrency();
+		}
+
+		function selectTranslationTab() {
+			currentCategory = 'Translation';
+			unitWorkspace.style.display = 'none';
+			currencyWorkspace.classList.remove('active');
+			translationWorkspace.hidden = false;
+			fileWorkspace.classList.remove('active');
+			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'Translation'));
 		}
 
 		function selectFileTab() {
 			currentCategory = 'File';
 			unitWorkspace.style.display = 'none';
 			currencyWorkspace.classList.remove('active');
+			translationWorkspace.hidden = true;
 			fileWorkspace.classList.add('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'File'));
 		}
@@ -553,6 +652,7 @@
 			const config = categories[category];
 			unitWorkspace.style.display = '';
 			currencyWorkspace.classList.remove('active');
+			translationWorkspace.hidden = true;
 			fileWorkspace.classList.remove('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === category));
 			[fromUnit, toUnit].forEach((select) => {
@@ -801,6 +901,41 @@
 			convertCurrency();
 		});
 		fillCurrencySelects();
+
+		const translationFrom = document.getElementById('translationFrom');
+		const translationTo = document.getElementById('translationTo');
+		const translationInput = document.getElementById('translationInput');
+		const translationOutput = document.getElementById('translationOutput');
+		const translateButton = document.getElementById('translateButton');
+		const translationStatus = document.getElementById('translationStatus');
+
+		translateButton.addEventListener('click', async () => {
+			const text = translationInput.value.trim();
+			if (!text) {
+				translationOutput.textContent = 'Enter text to translate.';
+				return;
+			}
+
+			translateButton.disabled = true;
+			translationStatus.textContent = 'Translating...';
+			try {
+				const source = translationFrom.value === 'auto' ? 'autodetect' : translationFrom.value;
+				const target = translationTo.value;
+				const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${target}`;
+				const response = await fetch(url);
+				if (!response.ok) throw new Error('Translation service is unavailable.');
+				const data = await response.json();
+				const translatedText = data.responseData && data.responseData.translatedText;
+				if (!translatedText) throw new Error('The text could not be translated.');
+				translationOutput.textContent = translatedText;
+				translationStatus.textContent = 'Translation complete.';
+			} catch (error) {
+				translationOutput.textContent = 'Translation could not be completed.';
+				translationStatus.textContent = error.message;
+			} finally {
+				translateButton.disabled = false;
+			}
+		});
 
 		const imageFile = document.getElementById('imageFile');
 		const imageFormat = document.getElementById('imageFormat');
