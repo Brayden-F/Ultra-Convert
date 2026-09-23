@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Ultra Convert</title>
-    <link rel="icon" type="image/png" href="Assets/Ultra Convert Favicon.ico">
+    <link rel="icon" type="image/png" href="assets/icon.ico">
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -351,7 +351,7 @@
 <body>
 	<main class="page">
 		<div class="topbar">
-			<p class="eyebrow">Everyday utility</p>
+			<p class="eyebrow">Everyday Utility</p>
 			<button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode" title="Switch theme">
 				<span class="theme-knob">
 					<span class="sun" aria-hidden="true">&#9728;</span>
@@ -360,7 +360,7 @@
 			</button>
 		</div>
 		<div class="title-row">
-			<img class="title-logo" src="Assets/Ultra Convert Logo.png" alt="Ultra Convert logo">
+			<img class="title-logo" src="assets/logo.png" alt="Ultra Convert logo">
 			<h1>Ultra<br><span class="title-accent">Convert</span></h1>
 		</div>
 		<p class="intro">Convert measurements and image files quickly in your browser.</p>
@@ -797,13 +797,17 @@
 		const convertImageButton = document.getElementById('convertImageButton');
 		let selectedImage = null;
 
-		imageFile.addEventListener('change', () => {
-			selectedImage = imageFile.files[0] || null;
-			if (!selectedImage) return;
-			fileName.textContent = selectedImage.name;
+		function setSelectedImage(file) {
+			if (!file || !file.type.startsWith('image/')) {
+				fileStatus.textContent = 'Only image files can be pasted or selected.';
+				return;
+			}
+			selectedImage = file;
+			const name = file.name || 'Pasted image';
+			fileName.textContent = name;
 			fileStatus.textContent = '';
 			convertImageButton.disabled = false;
-			const objectUrl = URL.createObjectURL(selectedImage);
+			const objectUrl = URL.createObjectURL(file);
 			filePreview.onload = () => {
 				URL.revokeObjectURL(objectUrl);
 				filePreview.classList.add('visible');
@@ -814,6 +818,40 @@
 				fileStatus.textContent = 'This browser cannot preview that input format, but conversion may still work.';
 			};
 			filePreview.src = objectUrl;
+		}
+
+		imageFile.addEventListener('change', () => {
+			const file = imageFile.files[0] || null;
+			if (file) setSelectedImage(file);
+		});
+
+		const fileDropZone = document.querySelector('.file-drop');
+		['dragenter', 'dragover'].forEach((eventName) => {
+			fileDropZone.addEventListener(eventName, (event) => {
+				event.preventDefault();
+				fileDropZone.style.borderColor = 'var(--accent)';
+				fileDropZone.style.background = '#eef4ff';
+			});
+		});
+		['dragleave', 'drop'].forEach((eventName) => {
+			fileDropZone.addEventListener(eventName, (event) => {
+				event.preventDefault();
+				fileDropZone.style.borderColor = '';
+				fileDropZone.style.background = '';
+			});
+		});
+		fileDropZone.addEventListener('drop', (event) => {
+			const file = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files[0] : null;
+			if (file) setSelectedImage(file);
+		});
+
+		document.addEventListener('paste', (event) => {
+			const items = event.clipboardData && event.clipboardData.items ? event.clipboardData.items : [];
+			const imageItem = Array.from(items).find((item) => item.type.startsWith('image/'));
+			if (!imageItem) return;
+			event.preventDefault();
+			const file = imageItem.getAsFile();
+			if (file) setSelectedImage(file);
 		});
 
 		convertImageButton.addEventListener('click', async () => {
