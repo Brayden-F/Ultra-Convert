@@ -114,6 +114,19 @@
 			text-transform: uppercase;
 		}
 
+		.watermark {
+			position: fixed;
+			right: 18px;
+			bottom: 14px;
+			z-index: 5;
+			color: var(--muted);
+			font: 800 0.78rem/1.2 'Inter', Arial, sans-serif;
+			letter-spacing: 0.15em;
+			text-transform: uppercase;
+			opacity: 0.55;
+			pointer-events: none;
+		}
+
 		.title-row {
 			display: flex;
 			align-items: center;
@@ -432,6 +445,7 @@
 			</div>
 		</section>
 	</main>
+	<div class="watermark" aria-hidden="true">Ultra Convert Made By Brayden Fields</div>
 
 	<script>
 		const themeToggle = document.getElementById('themeToggle');
