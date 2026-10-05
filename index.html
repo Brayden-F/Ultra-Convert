@@ -189,7 +189,8 @@
 			color: var(--muted);
 			background: transparent;
 			cursor: pointer;
-			font: 700 0.88rem Arial, sans-serif;
+			font: 11.3px Arial, sans-serif;
+			font-weight: bold;
 		}
 
 		.category:hover, .category.active {
@@ -496,6 +497,21 @@
 					<p class="file-status" id="translationStatus" aria-live="polite"></p>
 				</div>
 			</div>
+			<div class="workspace morse-workspace" id="morseWorkspace" hidden>
+				<div class="translation-grid">
+					<label class="field" for="morseInput">Text or Morse code
+						<textarea class="translation-input" id="morseInput" placeholder="Type text to encode or Morse to decode..."></textarea>
+					</label>
+					<div class="actions" style="margin-top: 0;">
+						<button class="action" id="encodeMorseButton" type="button" style="flex: 1; min-width: 0;">Encode</button>
+						<button class="action" id="decodeMorseButton" type="button" style="flex: 1; min-width: 0;">Decode</button>
+					</div>
+					<label class="field" for="morseOutput">Result
+						<output class="translation-output" id="morseOutput" aria-live="polite">Your Morse conversion will appear here.</output>
+					</label>
+					<p class="file-status" id="morseStatus" aria-live="polite"></p>
+				</div>
+			</div>
 			<div class="workspace file-workspace" id="fileWorkspace">
 				<div class="file-grid">
 					<label class="file-drop" for="imageFile">
@@ -607,6 +623,13 @@
 		translationTab.addEventListener('click', selectTranslationTab);
 		categoryList.appendChild(translationTab);
 
+		const morseTab = document.createElement('button');
+		morseTab.className = 'category';
+		morseTab.type = 'button';
+		morseTab.textContent = 'Morse Code';
+		morseTab.addEventListener('click', selectMorseTab);
+		categoryList.appendChild(morseTab);
+
 		const fileTab = document.createElement('button');
 		fileTab.className = 'category';
 		fileTab.type = 'button';
@@ -617,6 +640,7 @@
 		const unitWorkspace = document.getElementById('unitWorkspace');
 		const currencyWorkspace = document.getElementById('currencyWorkspace');
 		const translationWorkspace = document.getElementById('translationWorkspace');
+		const morseWorkspace = document.getElementById('morseWorkspace');
 		const fileWorkspace = document.getElementById('fileWorkspace');
 
 		function selectCurrencyTab() {
@@ -634,8 +658,19 @@
 			unitWorkspace.style.display = 'none';
 			currencyWorkspace.classList.remove('active');
 			translationWorkspace.hidden = false;
+			morseWorkspace.hidden = true;
 			fileWorkspace.classList.remove('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'Translation'));
+		}
+
+		function selectMorseTab() {
+			currentCategory = 'Morse Code';
+			unitWorkspace.style.display = 'none';
+			currencyWorkspace.classList.remove('active');
+			translationWorkspace.hidden = true;
+			morseWorkspace.hidden = false;
+			fileWorkspace.classList.remove('active');
+			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'Morse Code'));
 		}
 
 		function selectFileTab() {
@@ -643,6 +678,7 @@
 			unitWorkspace.style.display = 'none';
 			currencyWorkspace.classList.remove('active');
 			translationWorkspace.hidden = true;
+			morseWorkspace.hidden = true;
 			fileWorkspace.classList.add('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === 'File'));
 		}
@@ -653,6 +689,7 @@
 			unitWorkspace.style.display = '';
 			currencyWorkspace.classList.remove('active');
 			translationWorkspace.hidden = true;
+			morseWorkspace.hidden = true;
 			fileWorkspace.classList.remove('active');
 			document.querySelectorAll('.category').forEach((button) => button.classList.toggle('active', button.textContent === category));
 			[fromUnit, toUnit].forEach((select) => {
@@ -935,6 +972,71 @@
 			} finally {
 				translateButton.disabled = false;
 			}
+		});
+
+		const morseAlphabet = {
+			A: '.-', B: '-...', C: '-.-.', D: '-..', E: '.', F: '..-.', G: '--.', H: '....', I: '..', J: '.---', K: '-.-', L: '.-..', M: '--', N: '-.', O: '---', P: '.--.', Q: '--.-', R: '.-.', S: '...', T: '-', U: '..-', V: '...-', W: '.--', X: '-..-', Y: '-.--', Z: '--..',
+			'0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+			'.': '.-.-.-', ',': '--..--', '?': '..--..', "'": '.----.', '!': '-.-.--', '/': '-..-.', '(': '-.--.', ')': '-.--.-', '&': '.-...', ':': '---...', ';': '-.-.-.', '=': '-...-', '+': '.-.-.', '-': '-....-', '_': '..--.-', '"': '.-..-.', '$': '...-..-', '@': '.--.-.'
+		};
+		const morseReverse = Object.fromEntries(Object.entries(morseAlphabet).map(([letter, code]) => [code, letter]));
+
+		function encodeMorseText(text) {
+			const cleaned = text.trim();
+			if (!cleaned) return '';
+			return cleaned
+				.split(/\s+/)
+				.map((word) => word
+					.split('')
+					.map((char) => morseAlphabet[char.toUpperCase()] || '')
+					.filter(Boolean)
+					.join(' '))
+				.filter(Boolean)
+				.join(' / ');
+		}
+
+		function decodeMorseText(text) {
+			const cleaned = text.trim();
+			if (!cleaned) return '';
+			return cleaned
+				.split('/')
+				.map((word) => word.trim())
+				.filter(Boolean)
+				.map((word) => word
+					.split(/\s+/)
+					.map((letter) => morseReverse[letter] || '?')
+					.join(''))
+				.join(' ');
+		}
+
+		const morseInput = document.getElementById('morseInput');
+		const morseOutput = document.getElementById('morseOutput');
+		const encodeMorseButton = document.getElementById('encodeMorseButton');
+		const decodeMorseButton = document.getElementById('decodeMorseButton');
+		const morseStatus = document.getElementById('morseStatus');
+
+		encodeMorseButton.addEventListener('click', () => {
+			const text = morseInput.value;
+			if (!text.trim()) {
+				morseOutput.textContent = 'Enter text to convert into Morse code.';
+				morseStatus.textContent = 'Waiting for input.';
+				return;
+			}
+			const result = encodeMorseText(text);
+			morseOutput.textContent = result || 'No valid characters found to encode.';
+			morseStatus.textContent = result ? 'Morse output uses spaces between letters and / between words.' : 'No valid encoding.';
+		});
+
+		decodeMorseButton.addEventListener('click', () => {
+			const text = morseInput.value;
+			if (!text.trim()) {
+				morseOutput.textContent = 'Enter Morse code to decode.';
+				morseStatus.textContent = 'Waiting for input.';
+				return;
+			}
+			const result = decodeMorseText(text);
+			morseOutput.textContent = result || 'No valid Morse code found.';
+			morseStatus.textContent = result ? 'Decoded text is ready.' : 'No valid decoding.';
 		});
 
 		const imageFile = document.getElementById('imageFile');
